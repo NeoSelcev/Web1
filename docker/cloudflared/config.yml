@@ -1,0 +1,19 @@
+# Cloudflare Tunnel Configuration for web1
+# Note: tunnel ID and credentials are semi-public identifiers
+# They only work with proper DNS configuration in your Cloudflare account
+# See credentials.txt for full tunnel credentials and management details
+
+tunnel: 8601d491-93e5-4f02-8a3a-50bef97119a3
+credentials-file: /etc/cloudflared/8601d491-93e5-4f02-8a3a-50bef97119a3.json
+
+ingress:
+  # Main web projects page
+  - hostname: web1.1ddjrkbeu4e472wsits1.dpdns.org
+    service: http://web-main:80
+  # Individual projects (add as needed)
+  # - hostname: project1.1ddjrkbeu4e472wsits1.dpdns.org
+  #   service: http://project1:80
+  # - hostname: project2.1ddjrkbeu4e472wsits1.dpdns.org
+  #   service: http://project2:80
+  # Catch-all rule (required)
+  - service: http_status:404

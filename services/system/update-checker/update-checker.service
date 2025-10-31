@@ -1,0 +1,16 @@
+[Unit]
+Description=WEB1 Update Checker: checks system and Docker updates
+Documentation=man:systemd.service(5)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/opt/web1-monitoring/scripts/update-checker.sh
+TimeoutStartSec=300
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

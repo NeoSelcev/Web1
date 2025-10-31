@@ -1,0 +1,52 @@
+# Logrotate configuration for Telegram Sender
+# /etc/logrotate.d/telegram-sender
+
+/var/log/telegram-sender.log {
+    # Rotate when file reaches size
+    size 5M
+    
+    # Number of archived files to keep
+    rotate 10
+    
+    # Check frequency
+    daily
+    
+    # Compress rotated files
+    compress
+    
+    # Do not compress most recent rotated file
+    delaycompress
+    
+    # Don't error if file missing
+    missingok
+    
+    # Skip rotation for empty files
+    notifempty
+    
+    # Create new file with permissions
+    create 644 root root
+    
+    # Post-rotation script (optional)
+    postrotate
+    # Send notification about log rotation (only if size > 10MB)
+        if [ -s "$1" ] && [ $(stat -f%z "$1" 2>/dev/null || stat -c%s "$1" 2>/dev/null || echo 0) -gt 10485760 ]; then
+            /usr/local/bin/telegram-sender.sh "📋 Log rotation: telegram-sender.log rotated (size > 5MB)" 2 2>/dev/null || true
+        fi
+    endscript
+    
+    # Copy and truncate instead of moving (for active processes)
+    copytruncate
+}
+
+# Alternative configurations (commented):
+#
+# For high-load systems:
+# size 2M           # Smaller size for more frequent rotation
+# rotate 15         # More archives
+# hourly            # Check every hour
+# maxage 30         # Remove files older than 30 days
+#
+# For disk space conservation:
+# size 10M          # Larger size for less frequent rotation
+# rotate 5          # Fewer archives
+# weekly            # Check weekly

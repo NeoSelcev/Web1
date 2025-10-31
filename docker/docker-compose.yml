@@ -1,0 +1,89 @@
+services:
+  web-main:
+    container_name: web-main
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+    networks:
+      - web-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "7"
+
+  web1-proxy:
+    container_name: web1-proxy
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./nginx-auth/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-auth/.htpasswd:/etc/nginx/.htpasswd:ro
+      - ./nginx-auth/html:/usr/share/nginx/html:ro
+    networks:
+      - web-net
+    extra_hosts:
+      - "web-main:host-gateway"
+    depends_on:
+      - web-main
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "7"
+
+  test-web:
+    container_name: test-web
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "8082:80"
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+    networks:
+      - web-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "7"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token eyJhIjoiMDBlMDY3MWI2MDk0NzgzNjJjNDdhM2QzYTEzNWI1YjEiLCJ0IjoiODYwMWQ0OTEtOTNlNS00ZjAyLThhM2EtNTBiZWY5NzExOWEzIiwicyI6Ik5aZCtuOHYwc0ZyQ1NEdmR6UkxvM2pJamNiejQvZWtyVnZTdUZkTXRMMlk9In0=
+    networks:
+      - web-net
+    depends_on:
+      - test-web
+    # Note: cloudflared container has minimal tools, so we disable health check
+    # The tunnel status is monitored through system diagnostics and logs
+
+networks:
+  web-net:
+    driver: bridge
+    name: web-network

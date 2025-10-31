@@ -1,0 +1,16 @@
+[Unit]
+Description=WEB1 Failure Notifier: processes failures and sends Telegram notifications
+Documentation=man:systemd.service(5)
+After=network-online.target web1-watchdog.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/web1-failure-notifier.sh
+User=root
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=60
+
+[Install]
+WantedBy=multi-user.target

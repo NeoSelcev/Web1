@@ -1,0 +1,10 @@
+[Unit]
+Description=Run WEB1 Update Checker on weekdays at 09:00 (±30min randomization)
+
+[Timer]
+OnCalendar=Mon..Fri 09:00
+RandomizedDelaySec=30min
+Persistent=false
+
+[Install]
+WantedBy=timers.target

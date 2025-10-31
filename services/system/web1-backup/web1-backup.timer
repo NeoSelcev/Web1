@@ -1,0 +1,11 @@
+[Unit]
+Description=web1 Backup Timer
+Documentation=man:systemd.timer(5)
+
+[Timer]
+# Run daily at 2:00 AM (before nightly reboot at 3:30 AM)
+OnCalendar=*-*-* 02:00:00
+Persistent=false
+
+[Install]
+WantedBy=timers.target

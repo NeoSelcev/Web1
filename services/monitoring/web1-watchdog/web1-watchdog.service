@@ -1,0 +1,17 @@
+[Unit]
+Description=WEB1 Watchdog: monitors system health
+Documentation=man:systemd.service(5)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/web1-watchdog.sh
+User=root
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=90
+Environment="DEBUG_MODE=0"
+
+[Install]
+WantedBy=multi-user.target
