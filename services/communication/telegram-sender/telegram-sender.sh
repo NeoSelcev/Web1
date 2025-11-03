@@ -29,6 +29,9 @@ else
     exit 1
 fi
 
+# Set log file from config or default
+LOG_FILE="${TELEGRAM_LOG_FILE:-/var/log/telegram-sender.log}"
+
 # Set variables from config or default values
 TIMEOUT="${TELEGRAM_TIMEOUT:-10}"
 RETRY_COUNT="${TELEGRAM_RETRY_COUNT:-3}"
