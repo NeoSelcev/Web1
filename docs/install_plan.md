@@ -180,14 +180,15 @@ curl -k https://web1.tail586076.ts.net:8443
 
 ## 10. Fix Kernel Reboot Issues
 
-Linux kernel without additional parameters often cannot properly shutdown/reboot the device:
+⚠️ **Dell Wyse 3040 Specific**: Linux kernel without additional parameters cannot properly shutdown/reboot the device. After testing, the working solution is:
 
 ```bash
 # Open GRUB configuration file
 sudo nano /etc/default/grub
 
 # Find line: GRUB_CMDLINE_LINUX_DEFAULT="quiet"
-# Replace with: GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=efi intel_idle.max_cstate=1"
+# Replace with the following (this is the TESTED and WORKING solution for Dell Wyse 3040):
+GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=kbd intel_idle.max_cstate=1 console=tty0 nomodeset"
 
 # Update GRUB
 sudo update-grub
@@ -196,22 +197,36 @@ sudo update-grub
 reboot
 ```
 
-### Alternative Boot Parameters
+**Explanation of parameters:**
+- `reboot=kbd` - Forces keyboard controller reboot method (works on Dell Wyse 3040)
+- `intel_idle.max_cstate=1` - Limits CPU C-states for stability
+- `console=tty0` - Ensures console output during boot
+- `nomodeset` - Prevents video driver issues during boot/reboot
 
-If it doesn't work, replace and test one by one:
+### Tested Alternative Boot Parameters
+
+If `reboot=kbd` doesn't work on your system, try these alternatives one by one:
 
 ```bash
-GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=acpi intel_idle.max_cstate=1"
-GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=kbd intel_idle.max_cstate=1"
-GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=hard intel_idle.max_cstate=1"
+# Option 1: ACPI reboot (tested, didn't work on Dell Wyse 3040)
+GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=acpi intel_idle.max_cstate=1 console=tty0 nomodeset"
+
+# Option 2: BIOS reboot (tested, didn't work on Dell Wyse 3040)
+GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=bios intel_idle.max_cstate=1 console=tty0 nomodeset"
+
+# Option 3: EFI reboot (tested, didn't work on Dell Wyse 3040 - causes black screen)
+GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=efi intel_idle.max_cstate=1 console=tty0 nomodeset"
+
+# Option 4: PCI reboot (not tested)
+GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=pci intel_idle.max_cstate=1 console=tty0 nomodeset"
+
+# Option 5: Triple reboot (not tested)
+GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=triple intel_idle.max_cstate=1 console=tty0 nomodeset"
 ```
 
-Sometimes it helps to remove intel_idle entirely and leave only:
-```bash
-GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=bios"
-```
+### Workaround: Use kexec Instead of Reboot
 
-Additionally if all parameters don't help, there's a workaround instead of reboot use:
+If all reboot parameters fail, use `systemctl kexec` as alternative:
 ```bash
 sudo systemctl kexec
 ```
