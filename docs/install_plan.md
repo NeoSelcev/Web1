@@ -104,7 +104,121 @@ ssh root@<machine-ip-address>
 
 ---
 
-## 8. Disable WiFi (Optional)
+## 8. Add User to Sudo and Configure Passwordless Sudo
+
+Under root (on Wyse locally, not via SSH):
+
+```bash
+apt install sudo -y
+# Replace user with your username
+usermod -aG sudo user
+sudo visudo
+echo 'user ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/user-nopasswd
+sudo chmod 440 /etc/sudoers.d/user-nopasswd
+exit
+```
+
+---
+
+## 9. Tailscale Installation
+
+```bash
+sudo apt update
+sudo apt install curl -y
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo systemctl enable tailscaled
+sudo systemctl start tailscaled
+sudo tailscale up
+```
+
+A link will appear. Open it and authorize in Tailscale via GitHub.
+
+### Configure Tailscale Services for web1
+
+After Tailscale is running, set up HTTPS access to web1:
+
+```bash
+# Enable Tailscale serve for web1 (internal access)
+sudo tailscale serve --bg --https=8443 8123
+
+# Verify serve configuration
+tailscale serve status
+```
+
+The serve command will create internal HTTPS access at:
+`https://web1.tail586076.ts.net:8443`
+
+### Optional: Enable Tailscale Funnel (Public Access)
+
+For public internet access (be careful with security):
+
+```bash
+# Enable funnel for public access
+sudo tailscale funnel --bg 8443 on
+
+# Verify funnel status
+tailscale funnel status
+
+# To disable public access later:
+# sudo tailscale funnel --bg 8443 off
+```
+
+### Verify Tailscale Configuration
+
+```bash
+# Check Tailscale status
+tailscale status
+
+# Check all Tailscale services
+systemctl list-units --type=service | grep tailscale
+
+# Test HTTPS access
+curl -k https://web1.tail586076.ts.net:8443
+```
+
+---
+
+## 10. Fix Kernel Reboot Issues
+
+Linux kernel without additional parameters often cannot properly shutdown/reboot the device:
+
+```bash
+# Open GRUB configuration file
+sudo nano /etc/default/grub
+
+# Find line: GRUB_CMDLINE_LINUX_DEFAULT="quiet"
+# Replace with: GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=efi intel_idle.max_cstate=1"
+
+# Update GRUB
+sudo update-grub
+
+# Reboot to apply changes
+reboot
+```
+
+### Alternative Boot Parameters
+
+If it doesn't work, replace and test one by one:
+
+```bash
+GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=acpi intel_idle.max_cstate=1"
+GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=kbd intel_idle.max_cstate=1"
+GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=hard intel_idle.max_cstate=1"
+```
+
+Sometimes it helps to remove intel_idle entirely and leave only:
+```bash
+GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=bios"
+```
+
+Additionally if all parameters don't help, there's a workaround instead of reboot use:
+```bash
+sudo systemctl kexec
+```
+
+---
+
+## 11. Disable WiFi (Optional)
 
 ⚠️ **Note**: Dell Wyse 3040 doesn't have WiFi hardware, but this configuration is included for documentation purposes.
 
@@ -146,7 +260,7 @@ lsmod | grep -E 'iwl|brcm|cfg80211'
 
 ---
 
-## 9. Install Additional Packages and Temperature Sensors
+## 12. Install Additional Packages and Temperature Sensors
 
 ```bash
 # Install essential packages
@@ -176,7 +290,9 @@ echo 'alias temp="echo \"CPU Temperature: \$(echo \"scale=1; \$(cat /sys/class/t
 source ~/.bashrc
 ```
 
-## 10. Configure System Timezone
+---
+
+## 13. Configure System Timezone
 
 Set timezone to Israel (Jerusalem) for proper logging timestamps:
 
@@ -201,59 +317,9 @@ System clock synchronized: yes
               NTP service: active
 ```
 
-## 11. Add User to Sudo and Configure Passwordless Sudo
+---
 
-Under root (on Wyse locally, not via SSH):
-
-```bash
-apt install sudo -y
-# Replace user with your username
-usermod -aG sudo user
-sudo visudo
-echo 'user ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/user-nopasswd
-sudo chmod 440 /etc/sudoers.d/user-nopasswd
-exit
-```
-
-## 12. Fix Kernel Reboot Issues
-
-Linux kernel without additional parameters often cannot properly shutdown/reboot the device:
-
-```bash
-# Open GRUB configuration file
-sudo nano /etc/default/grub
-
-# Find line: GRUB_CMDLINE_LINUX_DEFAULT="quiet"
-# Replace with: GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=efi intel_idle.max_cstate=1"
-
-# Update GRUB
-sudo update-grub
-
-# Reboot to apply changes
-reboot
-```
-
-### Alternative Boot Parameters
-
-If it doesn't work, replace and test one by one:
-
-```bash
-GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=acpi intel_idle.max_cstate=1"
-GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=kbd intel_idle.max_cstate=1"
-GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=hard intel_idle.max_cstate=1"
-```
-
-Sometimes it helps to remove intel_idle entirely and leave only:
-```bash
-GRUB_CMDLINE_LINUX_DEFAULT="quiet reboot=bios"
-```
-
-Additionally if all parameters don't help, there's a workaround instead of reboot use:
-```bash
-sudo systemctl kexec
-```
-
-## 13. SSH Key Configuration
+## 14. SSH Key Configuration
 
 ```bash
 # Create folder for keys
@@ -269,7 +335,9 @@ nano ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 ```
 
-## 14. Client SSH Configuration
+---
+
+## 15. Client SSH Configuration
 
 On computer find SSH config folder.
 Usually it's here: `C:\Users\<your_username>\.ssh\`
@@ -318,61 +386,7 @@ PermitRootLogin no
 
 **⚠️ Warning**: After applying these changes, you will only be able to connect via SSH keys, not passwords. Make sure your SSH key is working before applying these changes!
 
-## 15. Tailscale Installation
-
-```bash
-sudo apt update
-sudo apt install curl -y
-curl -fsSL https://tailscale.com/install.sh | sh
-sudo systemctl enable tailscaled
-sudo systemctl start tailscaled
-sudo tailscale up
-```
-
-A link will appear. Open it and authorize in Tailscale via GitHub.
-
-### Configure Tailscale Services for web1
-
-After Tailscale is running, set up HTTPS access to web1:
-
-```bash
-# Enable Tailscale serve for web1 (internal access)
-sudo tailscale serve --bg 8443 http://localhost:8123
-
-# Verify serve configuration
-tailscale serve status
-```
-
-The serve command will create internal HTTPS access at:
-`https://web1.tail586076.ts.net:8443`
-
-### Optional: Enable Tailscale Funnel (Public Access)
-
-For public internet access (be careful with security):
-
-```bash
-# Enable funnel for public access
-sudo tailscale funnel --bg 8443 on
-
-# Verify funnel status
-tailscale funnel status
-
-# To disable public access later:
-# sudo tailscale funnel --bg 8443 off
-```
-
-### Verify Tailscale Configuration
-
-```bash
-# Check Tailscale status
-tailscale status
-
-# Check all Tailscale services
-systemctl list-units --type=service | grep tailscale
-
-# Test HTTPS access
-curl -k https://web1.tail586076.ts.net:8443
-```
+---
 
 ## 16. Configure Firewall and DNS
 
